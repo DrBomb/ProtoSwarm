@@ -13,9 +13,10 @@ INCDIR = $(DRIVER)/include
 
 SRCDIR= $(DRIVER)/src
 
-COMPILE = gcc -iquote$(INCDIR) -g -MMD -MP -Wall $(DEFINE)
+COMPILE = g++ -iquote$(INCDIR) -g -MMD -MP -Wall $(DEFINE)
 
 main_OBJECTS= main.o \
+			  comm.o \
 			  xbee_device.o \
 			  xbee_atcmd.o \
 			  xbee_serial_posix.o \
@@ -33,7 +34,10 @@ clean :
 	- rm -f *.o *.d main
 
 main.o: main.cpp
-	$(COMPILE) -x c++ -c main.cpp
+	$(COMPILE) -x c++ -std=c++11 -c main.cpp
+
+comm.o: comm.cpp
+	$(COMPILE) -x c++ -std=c++11 -c comm.cpp
 
 xbee_device.o:
 	$(COMPILE) -c $(SRCDIR)/xbee/xbee_device.c
@@ -72,5 +76,5 @@ swapbytes.o:
 	$(COMPILE) -c $(SRCDIR)/util/swapbytes.c
 
 main: $(main_OBJECTS)
-	$(COMPILE) $(main_OBJECTS) -o main
+	$(COMPILE) $(main_OBJECTS) -pthread -o main
 
