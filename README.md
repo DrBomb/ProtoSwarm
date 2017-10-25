@@ -2,6 +2,5 @@
 
 ## Como compilar en Linux
 
-- Clona este repositorio
-- Llama `git submodule init`
+- Clona este repositorio con `git clone --recursive http://github.com/DrBomb/ProtoSwarm`
 - Entra a `CPP` e invoca `make`
