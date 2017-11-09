@@ -36,44 +36,44 @@ clean :
 main.o: main.cpp
 	$(COMPILE) -x c++ -std=c++11 -c main.cpp
 
-comm.o: comm.cpp
+comm.o: comm.cpp comm.h
 	$(COMPILE) -x c++ -std=c++11 -c comm.cpp
 
 xbee_device.o:
-	$(COMPILE) -c $(SRCDIR)/xbee/xbee_device.c
+	$(COMPILE) -c -x c $(SRCDIR)/xbee/xbee_device.c
 
 xbee_atcmd.o:
-	$(COMPILE) -c $(SRCDIR)/xbee/xbee_atcmd.c
+	$(COMPILE) -c -x c $(SRCDIR)/xbee/xbee_atcmd.c
 
 xbee_serial_posix.o:
-	$(COMPILE) -c $(SRCDIR)/posix/xbee_serial_posix.c
+	$(COMPILE) -c -x c $(SRCDIR)/posix/xbee_serial_posix.c
 
 xbee_platform_posix.o:
-	$(COMPILE) -c $(SRCDIR)/posix/xbee_platform_posix.c
+	$(COMPILE) -c -x c $(SRCDIR)/posix/xbee_platform_posix.c
 
 wpan_aps.o:
-	$(COMPILE) -c $(SRCDIR)/wpan/wpan_aps.c
+	$(COMPILE) -c -x c $(SRCDIR)/wpan/wpan_aps.c
 
 wpan_types.o:
-	$(COMPILE) -c $(SRCDIR)/wpan/wpan_types.c
+	$(COMPILE) -c -x c $(SRCDIR)/wpan/wpan_types.c
 
 zigbee_zcl.o:
-	$(COMPILE) -c $(SRCDIR)/zigbee/zigbee_zcl.c
+	$(COMPILE) -c -x c $(SRCDIR)/zigbee/zigbee_zcl.c
 
 zigbee_zdo.o:
-	$(COMPILE) -c $(SRCDIR)/zigbee/zigbee_zdo.c
+	$(COMPILE) -c -x c $(SRCDIR)/zigbee/zigbee_zdo.c
 
 zcl_types.o:
-	$(COMPILE) -c $(SRCDIR)/zigbee/zcl_types.c
+	$(COMPILE) -c -x c $(SRCDIR)/zigbee/zcl_types.c
 
 hexdump.o:
-	$(COMPILE) -c $(SRCDIR)/util/hexdump.c
+	$(COMPILE) -c -x c $(SRCDIR)/util/hexdump.c
 
 hexstrtobyte.o:
-	$(COMPILE) -c $(SRCDIR)/util/hexstrtobyte.c
+	$(COMPILE) -c -x c $(SRCDIR)/util/hexstrtobyte.c
 
 swapbytes.o:
-	$(COMPILE) -c $(SRCDIR)/util/swapbytes.c
+	$(COMPILE) -c -x c $(SRCDIR)/util/swapbytes.c
 
 main: $(main_OBJECTS)
 	$(COMPILE) $(main_OBJECTS) -pthread -o main
