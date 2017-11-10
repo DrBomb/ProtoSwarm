@@ -26,28 +26,29 @@ int ni_handler(xbee_dev_t *xbee, const void FAR *frame, uint16_t length, void FA
     return 0;
 }
 
+int rx_handler(xbee_dev_t *xbee, const void FAR *frame, uint16_t length, void FAR *context){
+    XbeeComm *comm = *(XbeeComm**)(context);
+    comm->handleRXFrame(frame, length);
+    return 0;
+}
+
 
 #define XBEE_FRAME_HANDLE_ECHO { 0, 0, echo_handler, NULL }
 #define PORT "/dev/ttyUSB0"
 
 const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
     { 0, 0, echo_handler, &xbee },
-    { 0x95, 0, ni_handler, &xbee }, 
+    { 0x95, 0, ni_handler, &xbee },
+    { 0x90, 0, rx_handler, &xbee },
     //XBEE_FRAME_HANDLE_LOCAL_AT,
     XBEE_FRAME_TABLE_END
 };
 
 void loop(){
-    time_t check = time(NULL);
     while(1){
         xbee_dev_tick((xbee)->getXbee());
         //xbee_cmd_tick();
-        if(time(NULL) - check > TIMEOUT){
-            check = time(NULL);
-            for(std::map<uint64_t, XbeeDev*>::iterator it = xbee->Devices.begin(); it != xbee->Devices.end(); ++it){
-               printf("\n0x%" PRIx64 " %s\n", it->first, it->second->name);
-            }
-        }
+        xbee->onlineLoop();
         fflush(stdout);
     }
 }

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdexcept>
 #include <thread>
 #include <chrono>
 #include <time.h>
@@ -25,6 +26,7 @@ XbeeComm::XbeeComm(const char * port){
         xbee_dev_tick( &(this->xbee));
         status = xbee_cmd_query_status( &(this->xbee));
     } while (status == -EBUSY);
+    this->check = time(NULL);
 }
 
 void XbeeComm::handleXbeeFrame(const void FAR *frame, uint16_t length){
@@ -43,15 +45,50 @@ xbee_dev_t *XbeeComm::getXbee(){
     return &(this->xbee);
 }
 
-void XbeeComm::handleNIFrame( const void *frame, uint16_t length){;
+void XbeeComm::onlineLoop(){
+    if(time(NULL) - this->check > TIMEOUT){
+        this->check = time(NULL);
+        for(std::map<uint64_t, XbeeDev*>::iterator it = this->Devices.begin(); it != this->Devices.end(); ++it){
+            printf("\n0x%" PRIx64 " %s\n", it->first, it->second->name);
+            if(this->check - it->second->last_check < TIMEOUT && this->check - it->second->last_check > PING){
+                this->sendPing(it->second);
+            } else if(this->check - it->second->last_check > TIMEOUT){
+                printf("\nRemoving 0x%" PRIx64 " %s\n", it->first, it->second->name);
+                it->second->~XbeeDev();
+                this->Devices.erase(it);
+            }
+        }
+    }
+}
+
+void XbeeComm::sendPing(XbeeDev *dev){
+    char command[20];
+}
+
+void XbeeComm::handleRXFrame(const void *frame, uint16_t length){
     char *buf = (char*) frame;
-    uint64_t address = getAddress(buf+4);
+    uint64_t address = getAddress(buf+1);
+    try {
+        XbeeDev *d = this->Devices.at(address);
+        d->last_check = time(NULL);
+        char *data = (char*) calloc(length - 12, sizeof(char));
+        memcpy(data, buf+12, length-12);
+        printf("\nReceived: %s", data);
+    } catch (std::out_of_range){
+        printf("\nMessage from Unregistered device: %" PRIx64 "\n", address);
+    }
+}
+
+void XbeeComm::handleNIFrame( const void *frame, uint16_t length){
+    char *buf = (char*) frame;
+    uint64_t address = getAddress(buf+1);
     char *name = (char*) calloc(getNiStringLength(buf+22), sizeof(char));
     memcpy(name, buf+22, getNiStringLength(buf+22));
     printf("\nNI FRAME FROM: 0x");
     printf("%" PRIx64 " NAME: %s\n", address, name);
     printf("REGISTERED\n");
     XbeeDev *xbd = new XbeeDev(name, getNiStringLength(buf+22), address);
+    xbd->last_check = time(NULL);
     this->Devices[address] = xbd;
 }
 

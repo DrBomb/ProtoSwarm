@@ -9,6 +9,7 @@
 #define COMM_H
 
 #define TIMEOUT 10
+#define PING 8
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,13 +34,17 @@ class XbeeComm:BaseComm {
         XbeeComm(const char* port);
         void handleXbeeFrame(const void FAR *frame, uint16_t length);
         void handleNIFrame(const void FAR *frame, uint16_t length);
+        void handleRXFrame(const void FAR *frame, uint16_t length);
         xbee_dev_t *getXbee();
         std::map<uint64_t, XbeeDev*> Devices;
+        void onlineLoop();
     private:
         void commLoop();
         xbee_serial_t serial;
         xbee_dev_t xbee;
         std::thread online_check;
+        time_t check;
+        void sendPing(XbeeDev *dev);
 };
 
 uint64_t getAddress(const char *data);

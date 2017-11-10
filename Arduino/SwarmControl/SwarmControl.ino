@@ -39,7 +39,16 @@ void loop() {
       sendProx();
       order = '\0';
       break;
+    case '\2':
+      sendEcho();
+      order = '\0';
+      break;  
   }
+}
+
+void sendEcho(){
+  xSerial.write('(');
+  xSerial.write(order);
 }
 
 void sendProx(){
