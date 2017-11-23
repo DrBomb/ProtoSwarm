@@ -1,10 +1,10 @@
 #define DEBUG 1
 #define BUFFSIZE 10
-#define FLOOR_R A0
-#define FLOOR_L A1
+#define FLOOR_R A3
+#define FLOOR_L A5
 #define WHEEL_R A2
-#define WHEEL_L A3
-#define PROX_PIN A4
+#define WHEEL_L A4
+#define PROX_PIN A1
 
 #include <AFMotor.h>
 #include <QTRSensors.h>
@@ -17,7 +17,7 @@ unsigned int sensorValues[4];
 QTRSensorsRC qtr((unsigned char[]) {FLOOR_R, FLOOR_L, WHEEL_R, WHEEL_L}, 4);
 AF_DCMotor motorR(1);
 AF_DCMotor motorL(2);
-SoftwareSerial xSerial(9, 10);
+SoftwareSerial xSerial(10, 9);
 
 struct Motor {
   unsigned long deadline;
@@ -32,7 +32,7 @@ void setup() {
   
   // put your setup code here, to run once:
   xSerial.begin(115200);
-  #ifdef DEFINE
+  #if DEBUG
   Serial.begin(115200);
   #endif
   pinMode(A1,INPUT);
@@ -41,6 +41,9 @@ void setup() {
     qtr.calibrate();
     delay(20);
   }
+  #if DEBUG
+  Serial.println("INIT");
+  #endif
 }
 
 void loop() {
@@ -108,6 +111,7 @@ void loop() {
       break;
   }
   order = '\0';
+  iden = '\0';
   memset(buff, 0, BUFFSIZE);
 }
 

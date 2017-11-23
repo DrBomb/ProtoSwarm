@@ -29,6 +29,18 @@ XbeeComm::XbeeComm(const char * port){
     this->check = time(NULL);
 }
 
+bool XbeeComm::sendCommand(XbeeDev *dev, char order, char *data, uint8_t datalen){
+    Command *cmd = new Command(dev->addr64bit, xbee_next_frame_id(&this->xbee), order, this->getNextId(), data, datalen);
+    this->Commands.insert(this->Commands.end(), cmd);
+    cmd->send(&this->xbee);
+    return true;
+}
+
+uint8_t XbeeComm::getNextId(){
+    this->frameid++;
+    return this->frameid;
+}
+
 void XbeeComm::handleXbeeFrame(const void FAR *frame, uint16_t length){
     printf("HANDLING FRAME\n");
     for(int i = 0; i < length; i++){
@@ -41,16 +53,18 @@ void XbeeComm::handleXbeeFrame(const void FAR *frame, uint16_t length){
     }
     printf("\n");
 }
+
 xbee_dev_t *XbeeComm::getXbee(){
     return &(this->xbee);
 }
 
 void XbeeComm::onlineLoop(){
-    if(time(NULL) - this->check > TIMEOUT){
+    if(time(NULL) - this->check > 1){
         this->check = time(NULL);
         for(std::map<uint64_t, XbeeDev*>::iterator it = this->Devices.begin(); it != this->Devices.end(); ++it){
             printf("\n0x%" PRIx64 " %s\n", it->first, it->second->name);
             if(this->check - it->second->last_check < TIMEOUT && this->check - it->second->last_check > PING){
+                printf("SENDING PING");
                 this->sendPing(it->second);
             } else if(this->check - it->second->last_check > TIMEOUT){
                 printf("\nRemoving 0x%" PRIx64 " %s\n", it->first, it->second->name);
@@ -62,7 +76,8 @@ void XbeeComm::onlineLoop(){
 }
 
 void XbeeComm::sendPing(XbeeDev *dev){
-    char command[20];
+    Command *cmd = new Command(dev->addr64bit, xbee_next_frame_id(&this->xbee), (char)2, this->getNextId(), NULL, 0) ;
+    cmd->send(&this->xbee);
 }
 
 void XbeeComm::handleRXFrame(const void *frame, uint16_t length){
@@ -72,6 +87,17 @@ void XbeeComm::handleRXFrame(const void *frame, uint16_t length){
         XbeeDev *d = this->Devices.at(address);
         d->last_check = time(NULL);
         char *data = (char*) calloc(length - 12, sizeof(char));
+        char order = *data+1;
+        char iden = *data+2;
+        char len = *data+3;
+        std::vector<Command*>::iterator it;
+        for(it = this->Commands.begin(); it != this->Commands.end(); it++){
+            if((*it)->address == address && (*it)->order == order && (*it)->iden == iden){
+                (*it)->setReady();
+                memcpy((*it)->data, data, (uint8_t)len);
+                this->Commands.erase(it);
+            } 
+        }
         memcpy(data, buf+12, length-12);
         printf("\nReceived: %s", data);
     } catch (std::out_of_range){
@@ -123,4 +149,30 @@ XbeeDev::XbeeDev(const char* name, uint16_t length, uint64_t addr){
 
 XbeeDev::~XbeeDev(){
     free(this->name);
+}
+
+Command::Command(uint64_t address, uint8_t id, char order, char iden, char *payload, uint8_t payload_length){
+    this->address = address;
+    this->header[1] = id;
+    this->header[2] = (address>>(8*7))&0xFF;
+    this->header[3] = (address>>(8*6))&0xFF;
+    this->header[4] = (address>>(8*5))&0xFF;
+    this->header[5] = (address>>(8*4))&0xFF;
+    this->header[6] = (address>>(8*3))&0xFF;
+    this->header[7] = (address>>(8*2))&0xFF;
+    this->header[8] = (address>>(8*1))&0xFF;
+    this->header[9] = (address>>(8*0))&0xFF;
+    this->header[15] = order;
+    this->header[16] = iden;
+    this->header[17] = payload_length;
+    memcpy(this->data, payload, payload_length);
+    this->datalen = payload_length;
+}
+
+void Command::send(xbee_dev_t *xb){
+    xbee_frame_write(xb, this->header, this->headerlen, this->data, this->datalen, XBEE_WRITE_FLAG_NONE);
+}
+
+void Command::setReady(){
+    this->_ready = true;
 }

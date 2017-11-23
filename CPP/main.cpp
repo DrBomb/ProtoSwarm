@@ -37,7 +37,7 @@ int rx_handler(xbee_dev_t *xbee, const void FAR *frame, uint16_t length, void FA
 #define PORT "/dev/ttyUSB0"
 
 const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-    { 0, 0, echo_handler, &xbee },
+    //{ 0, 0, echo_handler, &xbee },
     { 0x95, 0, ni_handler, &xbee },
     { 0x90, 0, rx_handler, &xbee },
     //XBEE_FRAME_HANDLE_LOCAL_AT,
